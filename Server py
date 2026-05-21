@@ -1,0 +1,113 @@
+from flask import Flask, jsonify, send_from_directory
+import os, datetime as dt, requests
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+API_FOOTBALL_KEY = os.getenv('API_FOOTBALL_KEY', '')
+ODDS_API_KEY = os.getenv('ODDS_API_KEY', '')
+ODDS_SPORT = os.getenv('ODDS_SPORT', 'soccer_epl')
+ODDS_REGIONS = os.getenv('ODDS_REGIONS', 'uk,eu')
+ODDS_MARKETS = os.getenv('ODDS_MARKETS', 'h2h')
+ODDS_FORMAT = os.getenv('ODDS_FORMAT', 'decimal')
+DATE_FORMAT = os.getenv('DATE_FORMAT', 'iso')
+FOOTBALL_BASE = 'https://v3.football.api-sports.io'
+ODDS_BASE = 'https://api.the-odds-api.com/v4'
+
+
+def api_headers():
+    return {'x-apisports-key': API_FOOTBALL_KEY}
+
+
+def odds_params():
+    return {'regions': ODDS_REGIONS, 'markets': ODDS_MARKETS, 'oddsFormat': ODDS_FORMAT, 'dateFormat': DATE_FORMAT, 'apiKey': ODDS_API_KEY}
+
+
+def get_fixtures(date_str):
+    if not API_FOOTBALL_KEY:
+        return []
+    r = requests.get(f'{FOOTBALL_BASE}/fixtures', headers=api_headers(), params={'date': date_str, 'timezone': 'Europe/Madrid'}, timeout=20)
+    r.raise_for_status()
+    return r.json().get('response', [])
+
+
+def get_lineups(fixture_id):
+    if not API_FOOTBALL_KEY:
+        return []
+    r = requests.get(f'{FOOTBALL_BASE}/fixtures/lineups', headers=api_headers(), params={'fixture': fixture_id}, timeout=20)
+    r.raise_for_status()
+    return r.json().get('response', [])
+
+
+def get_injuries(fixture_id):
+    if not API_FOOTBALL_KEY:
+        return []
+    r = requests.get(f'{FOOTBALL_BASE}/injuries', headers=api_headers(), params={'fixture': fixture_id}, timeout=20)
+    r.raise_for_status()
+    return r.json().get('response', [])
+
+
+def get_odds():
+    if not ODDS_API_KEY:
+        return []
+    r = requests.get(f'{ODDS_BASE}/sports/{ODDS_SPORT}/odds', params=odds_params(), timeout=20)
+    r.raise_for_status()
+    return r.json()
+
+
+def first_decimal_price(event):
+    try:
+        bookmakers = event.get('bookmakers', [])
+        if not bookmakers:
+            return None
+        markets = bookmakers[0].get('markets', [])
+        if not markets:
+            return None
+        outcomes = markets[0].get('outcomes', [])
+        if not outcomes:
+            return None
+        prices = [o.get('price', 0) for o in outcomes if isinstance(o.get('price', 0), (int, float))]
+        return min(prices) if prices else None
+    except Exception:
+        return None
+
+
+def score_event(fixture, odds_events):
+    home = fixture['teams']['home']['name']
+    away = fixture['teams']['away']['name']
+    fid = fixture['fixture']['id']
+    injury_count = len(get_injuries(fid))
+    lineups = get_lineups(fid)
+    lineup_bonus = 0.03 if lineups else 0.0
+    odds_match = next((e for e in odds_events if e.get('home_team') == home and e.get('away_team') == away), None)
+    odds_price = first_decimal_price(odds_match) if odds_match else None
+    probability = 0.58 + min(0.18, injury_count * 0.03 + lineup_bonus)
+    edge = probability - (1 / odds_price) if odds_price else 0.0
+    market = '1' if odds_price and odds_price < 2.2 else 'Over 1.5'
+    vip = odds_price is not None and odds_price >= 1.55 and probability >= 0.68 and edge >= 0.03
+    reason = f"Injuries detectadas: {injury_count}. Lineups: {'sí' if lineups else 'no'}. Mercado: {'sí' if odds_match else 'no'}."
+    return {'match': f'{home} vs {away}', 'market': market, 'odds': round(odds_price, 2) if odds_price else None, 'probability': round(probability, 3), 'edge': round(edge, 3), 'reason': reason, 'vip': vip}
+
+
+@app.get('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+
+@app.get('/api/picks')
+def picks():
+    date_str = dt.date.today().isoformat()
+    try:
+        fixtures = get_fixtures(date_str)
+        odds_events = get_odds()
+        picks = []
+        for fx in fixtures[:20]:
+            pick = score_event(fx, odds_events)
+            if pick['odds'] is not None and pick['vip']:
+                picks.append(pick)
+        picks = sorted(picks, key=lambda x: (x['edge'], x['probability']), reverse=True)
+        return jsonify({'updated_at': dt.datetime.now().isoformat(), 'date': date_str, 'picks': picks})
+    except Exception as e:
+        return jsonify({'updated_at': dt.datetime.now().isoformat(), 'date': date_str, 'error': str(e), 'picks': []}), 200
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000, debug=True)
