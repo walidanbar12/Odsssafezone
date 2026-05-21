@@ -1,0 +1,11 @@
+# Desde GitHub móvil o web
+
+1. Entra en GitHub y crea un repositorio nuevo.
+2. Ponle un nombre, por ejemplo `radar-live`.
+3. Déjalo público.
+4. Pulsa **Add file** > **Upload files**.
+5. Sube estos archivos: `index.html`, `server.py`, `requirements.txt`, `RUNME.md`, `RENDER_SETUP.md`, `PUBLIC_DEPLOY.md`, `PUBLIC_OPTIONS.md`, `GITHUB_STEPS.md`.
+6. Haz commit.
+7. Ve a Render y conecta ese repo.
+
+Importante: GitHub sirve para guardar el código. La URL pública final la da Render.
