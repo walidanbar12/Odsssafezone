@@ -1,0 +1,23 @@
+# Arranque rápido con APIs reales
+
+1. Instala dependencias:
+   `pip install -r requirements.txt`
+2. Define variables de entorno:
+   - `API_FOOTBALL_KEY`
+   - `ODDS_API_KEY`
+   - opcional: `ODDS_SPORT=soccer_epl`
+   - opcional: `ODDS_REGIONS=uk,eu`
+3. Ejecuta:
+   `python server.py`
+4. Abre en el navegador:
+   `http://localhost:8000`
+
+## Qué hace
+- Lee partidos del día desde API-Football.
+- Cruza cuotas desde The Odds API.
+- Filtra picks premium con cuota mínima, probabilidad mínima y edge mínimo.
+- Devuelve solo los partidos que superan el filtro VIP.
+
+## Importante
+- Si una clave falta, el endpoint devuelve la página pero sin datos reales.
+- Si quieres alertas automáticas por Telegram después, se puede añadir encima de este backend.
