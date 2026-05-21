@@ -1,0 +1,16 @@
+# Public deployment
+
+Recommended options for a public URL in 2026:
+- Render: connect GitHub repo, build with `pip install -r requirements.txt`, start with `gunicorn server:app`.
+- Railway: deploy from GitHub or CLI and generate a public domain.
+- PythonAnywhere: configure Flask via Web tab and WSGI if you prefer simple hosting.
+
+For a public URL, use Render or Railway for the easiest route. GitHub Pages is only for static sites, not Flask.
+
+Steps for Render:
+1. Push the folder to GitHub.
+2. Create a new Web Service.
+3. Use build command `pip install -r requirements.txt`.
+4. Use start command `gunicorn server:app`.
+5. Add environment variables `API_FOOTBALL_KEY` and `ODDS_API_KEY`.
+6. Deploy and copy the public URL.
