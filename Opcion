@@ -1,0 +1,10 @@
+# Opción pública sin tocar mucho
+
+Si quieres un enlace público que funcione, las opciones más fáciles son:
+- Render (Flask público con URL onrender.com)
+- Railway (URL pública desde el panel)
+- Cloudflare Pages / Netlify solo si conviertes la parte web a estática + API aparte
+
+Para tu caso, Render es la más directa para este Flask.
+
+Si no tienes portátil ahora mismo, una alternativa práctica es que yo te deje el ZIP/estructura lista y luego la subes con el móvil a un repositorio o a un servicio que acepte despliegue desde ZIP.
