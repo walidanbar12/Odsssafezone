@@ -1,0 +1,15 @@
+# Render: pasos exactos
+
+1. En Render, pulsa **New** > **Web Service**.
+2. Conecta tu repo de GitHub con este proyecto.
+3. Rellena así:
+   - **Language**: Python 3
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn server:app`
+4. En **Environment Variables** añade:
+   - `API_FOOTBALL_KEY`
+   - `ODDS_API_KEY`
+   - opcional `ODDS_SPORT=soccer_epl`
+   - opcional `ODDS_REGIONS=uk,eu`
+5. Guarda y pulsa **Create Web Service**.
+6. Espera al deploy y abre la URL pública que te da Render.
