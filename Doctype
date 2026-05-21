@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar Live</title>
+<style>body{font-family:Arial,sans-serif;background:#111;color:#eee;margin:0}header{padding:16px 20px;border-bottom:1px solid #333}main{padding:20px;display:grid;gap:16px}.card{background:#1b1b1b;border:1px solid #333;border-radius:14px;padding:16px}.muted{color:#9aa}.good{color:#7fd06a}.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#222;border:1px solid #333}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}</style>
+</head>
+<body>
+<header>
+  <h1>Radar Live de Partidos</h1>
+  <div class="muted">Se actualiza cada 60 segundos desde /api/picks</div>
+</header>
+<main>
+  <section class="card">
+    <div class="grid" id="meta"></div>
+  </section>
+  <section class="card">
+    <h2>Mejores partidos</h2>
+    <div id="picks"></div>
+  </section>
+</main>
+<script>
+async function load(){
+  const r=await fetch('/api/picks?ts='+Date.now());
+  const d=await r.json();
+  document.getElementById('meta').innerHTML=`
+    <div><div class='muted'>Actualizado</div><strong>${new Date(d.updated_at).toLocaleString('es-ES')}</strong></div>
+    <div><div class='muted'>Fecha</div><strong>${d.date||''}</strong></div>
+    <div><div class='muted'>Fuente</div><strong>API + cuota</strong></div>`;
+  document.getElementById('picks').innerHTML=(d.picks||[]).map(p=>`
+    <div class='card' style='margin-top:12px'>
+      <div class='badge'>${p.market}</div>
+      <h3>${p.match}</h3>
+      <p><strong class='good'>${Number(p.odds).toFixed(2)}</strong> · Prob ${Math.round(p.probability*100)}% · Edge ${Math.round(p.edge*100)}%</p>
+      <p class='muted'>${p.reason}</p>
+    </div>`).join('')||'<p>No hay picks ahora mismo.</p>';
+}
+load();
+setInterval(load,60000);
+</script>
+</body>
+</html>
